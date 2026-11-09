@@ -12,38 +12,19 @@ header_start:
     dd 0                                ; i386 protected mode
     dd header_end - header_start
     dd -(0xe85250d6 + (header_end - header_start))
+    ; framebuffer request: prefer linear, 1024x768x32
+    dw 5
+    dw 2
+    dd 20
+    dd 1024
+    dd 768
+    dd 32
+    align 8
     ; end tag
     dw 0
     dw 0
     dd 8
 header_end:
-
-%macro VCHAR 1
-    push eax
-    push edi
-    mov edi, 0xb8000
-    add edi, [vpos]
-    mov al, %1
-    mov [edi], al
-    mov byte [edi + 1], 0x0f
-    add word [vpos], 2
-    pop edi
-    pop eax
-%endmacro
-
-%macro VCHAR64 1
-    push rax
-    push rdi
-    mov rdi, 0xb8000
-    movzx edi, word [vpos]
-    add rdi, 0xb8000
-    mov al, %1
-    mov [rdi], al
-    mov byte [rdi + 1], 0x0f
-    add word [vpos], 2
-    pop rdi
-    pop rax
-%endmacro
 
 section .text
 global _start
@@ -53,10 +34,7 @@ bits 32
 _start:
     cmp eax, MB_MAGIC
     jne .die
-    mov word [vpos], 0
-    VCHAR 'A'
     mov esi, ebx                        ; keep multiboot info pointer
-    VCHAR 'B'
 
     ; clear six page tables: pml4, pdpt and four pd pages
     mov edi, pml4
@@ -91,7 +69,6 @@ _start:
 
     mov eax, pml4
     mov cr3, eax
-    VCHAR 'C'
 
     ; PAE
     mov eax, cr4
@@ -108,10 +85,8 @@ _start:
     mov eax, cr0
     or eax, 1 << 31
     mov cr0, eax
-    VCHAR 'D'
 
     lgdt [gdt_ptr]
-    VCHAR 'E'
 
     jmp 0x08:long_mode
 
@@ -121,7 +96,6 @@ _start:
 
 bits 64
 long_mode:
-    VCHAR64 'F'
     mov esp, stack_top
     mov eax, 0x10
     mov ds, eax
@@ -129,7 +103,6 @@ long_mode:
     mov ss, eax
 
     mov edi, esi                        ; multiboot info pointer, zero extended
-    VCHAR64 'K'
     call kmain
 
 .halt:
@@ -151,8 +124,6 @@ gdt_ptr:
     dq gdt64
 
 section .bss
-vpos:
-    resw 1
 alignb 4096
 pml4:
     resb 4096

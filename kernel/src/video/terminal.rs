@@ -76,6 +76,22 @@ impl Terminal {
                 self.y += 1;
             }
             '\r' => self.x = 0,
+            '\x08' => {
+                // backspace: step back one cell
+                if self.x > 0 {
+                    self.x -= 1;
+                } else if self.y > 0 {
+                    self.y -= 1;
+                    self.x = self.cols - 1;
+                }
+                self.fb.fill_rect(
+                    self.x * FONT_WIDTH,
+                    self.y * FONT_HEIGHT,
+                    FONT_WIDTH,
+                    FONT_HEIGHT,
+                    BLACK,
+                );
+            }
             '\t' => {
                 // next tab stop of 8 chars
                 self.x = (self.x + 8) & !(8 - 1);

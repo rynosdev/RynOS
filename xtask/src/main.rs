@@ -27,7 +27,21 @@ fn sh(cmd: &mut Command) {
 // the kernel dir has its own .cargo config with the target set
 fn cargo_build() {
     let dir = root().join("kernel");
-    sh(Command::new("cargo").arg("build").current_dir(&dir));
+    // own link flags plus strip the home dir from panic locations
+    let script = root().join("kernel/linker.ld").display().to_string();
+    let home = std::env::var("HOME").unwrap_or_default();
+    let flags = format!(
+        "target.x86_64-unknown-none.rustflags=[\"-C\", \"relocation-model=static\", \
+         \"-C\", \"link-arg=--gc-sections\", \"-C\", \"link-arg=-T{script}\", \
+         \"--remap-path-prefix={home}/=/\"]"
+    );
+    sh(
+        Command::new("cargo")
+            .arg("build")
+            .arg("--config")
+            .arg(&flags)
+            .current_dir(&dir),
+    );
 }
 
 fn kernel_bin() -> PathBuf {

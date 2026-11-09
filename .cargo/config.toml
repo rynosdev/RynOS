@@ -1,0 +1,5 @@
+# config.toml
+# cargo xtask alias for the RynOS build tools.
+
+[alias]
+xtask = ["run", "-p", "xtask", "--"]

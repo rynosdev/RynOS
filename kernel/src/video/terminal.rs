@@ -28,15 +28,6 @@ pub fn init(fb: Framebuffer) -> bool {
     true
 }
 
-// print on screen without touching globals inside panic
-pub fn print_str(s: &str) {
-    unsafe {
-        if let Some(t) = TERMINAL.as_mut() {
-            t.write_str(s);
-        }
-    }
-}
-
 impl fmt::Write for Terminal {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for c in s.chars() {

@@ -13,14 +13,15 @@ static mut GDT: [u64; 3] = [
 const CODE_SEL: u16 = 8;
 const DATA_SEL: u16 = 16;
 
+// read through lgdt/lidt memory operands, the compiler cannot see it
 #[repr(packed)]
+#[allow(dead_code)]
 struct GdtPtr {
     limit: u16,
     base: u64,
 }
 
 pub const KERNEL_CODE: u16 = CODE_SEL;
-pub const KERNEL_DATA: u16 = DATA_SEL;
 
 pub fn load() {
     unsafe {
@@ -41,12 +42,15 @@ pub fn load() {
         );
         // data segments just get the flat base
         core::arch::asm!(
-            "mov ds, {d}",
-            "mov es, {d}",
-            "mov fs, {d}",
-            "mov gs, {d}",
-            "mov ss, {d}",
-            d = in(reg) DATA_SEL,
+                        "mov ax, {v}",
+            "mov ds, ax",
+            "mov es, ax",
+            "mov fs, ax",
+            "mov gs, ax",
+            "mov ss, ax",
+            v = const DATA_SEL,
+            
+            options(nostack),
         );
     }
 }

@@ -6,7 +6,7 @@
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-struct Gate {
+pub struct Gate {
     offset_low: u16,
     selector: u16,
     bits: u8,
@@ -39,7 +39,9 @@ impl Gate {
 
 pub static mut IDT: [Gate; 256] = [Gate::EMPTY; 256];
 
+// read through lgdt/lidt memory operands, the compiler cannot see it
 #[repr(packed)]
+#[allow(dead_code)]
 struct IdtPtr {
     limit: u16,
     base: u64,

@@ -102,7 +102,7 @@ pub fn init() {
     set_irq_mask(0x21, 0, false); // timer
     set_irq_mask(0x21, 1, false); // keyboard
 
-    unsafe {
+    {
         let a = |v: u8, f: usize| idt::set_gate(v, f);
         a(0, divide_fault as usize);
         a(6, ud_fault as usize);

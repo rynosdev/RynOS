@@ -1,0 +1,10 @@
+# kernel/Cargo.toml
+# Copyright (c) RynOS 2026
+# The RynOS kernel binary. no_std, freestanding x86_64.
+
+[package]
+name = "rynkernel"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]

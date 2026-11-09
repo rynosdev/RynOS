@@ -1,0 +1,6 @@
+# Cargo.toml
+# RynOS workspace. kernel is the OS, xtask does build/run/test/image.
+
+[workspace]
+members = ["kernel"]
+resolver = "2"

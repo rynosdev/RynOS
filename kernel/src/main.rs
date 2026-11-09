@@ -10,24 +10,44 @@
 mod boot;
 mod io;
 mod panic;
+mod video;
+
+use crate::boot::multiboot;
+use crate::video::terminal;
 
 #[no_mangle]
 pub extern "C" fn kmain(mbi: u64) -> ! {
     io::serial::init();
-    io::serial::init();
     serial_println!("RynOS v0.0.1");
 
-    if let Some(fb) = boot::multiboot::find_framebuffer(mbi) {
-        serial_println!(
-            "framebuffer: {}x{}x{}, pitch {}, addr {:#x}",
-            fb.width, fb.height, fb.bpp, fb.pitch, fb.addr
-        );
-    } else {
-        serial_println!("no framebuffer found");
-    }
+    let fb_info = match multiboot::find_framebuffer(mbi) {
+        Some(info) => info,
+        None => panic!("no framebuffer from bootloader"),
+    };
+    serial_println!(
+        "framebuffer: {}x{}x{}, pitch {}, addr {:#x}",
+        fb_info.width,
+        fb_info.height,
+        fb_info.bpp,
+        fb_info.pitch,
+        fb_info.addr
+    );
+
+    let fb = video::framebuffer::Framebuffer::new(fb_info)
+        .unwrap_or_else(|| panic!("unsupported framebuffer mode"));
+    terminal::init(fb);
+
+    let t = match unsafe { terminal::TERMINAL.as_mut() } {
+        Some(t) => t,
+        None => panic!("terminal not ready"),
+    };
+    use core::fmt::Write;
+    let _ = writeln!(t, "RynOS v0.0.1");
+    let _ = writeln!(t, "ready. press keys when interrupts are on.");
+
 
     loop {
-        // interrupts are off this early, hlt just waits forever
+        // interrupts not up yet this early
         unsafe { core::arch::asm!("hlt") }
     }
 }

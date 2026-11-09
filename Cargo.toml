@@ -2,5 +2,5 @@
 # RynOS workspace. kernel is the OS, xtask does build/run/test/image.
 
 [workspace]
-members = ["kernel"]
+members = ["kernel", "xtask"]
 resolver = "2"

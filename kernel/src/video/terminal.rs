@@ -2,11 +2,18 @@
  * terminal.rs
  * Copyright (c) RynOS 2026
  * Text screen on the framebuffer. Grid, cursor and scrolling.
+ *
+ * Cell is 10 pixel wide so a glyph can grow to 9px and keep a gap.
+ * Every set font bit becomes a 2x2 square, that is how we get the
+ * heavy look of vga console text.
  */
 
-use super::font::{Font, FONT_HEIGHT, FONT_WIDTH};
+use super::font::{Font, FONT_HEIGHT};
 use super::framebuffer::{Framebuffer, BLACK, WHITE};
 use core::fmt;
+
+// glyph px + 2px thick stroke
+const CELL_WIDTH: u32 = 10;
 
 pub struct Terminal {
     fb: Framebuffer,
@@ -38,7 +45,7 @@ impl fmt::Write for Terminal {
 
 impl Terminal {
     pub fn new(mut fb: Framebuffer) -> Self {
-        let cols = fb.width() / FONT_WIDTH;
+        let cols = fb.width() / CELL_WIDTH;
         let rows = fb.height() / FONT_HEIGHT;
         fb.clear(BLACK);
         Terminal {
@@ -69,9 +76,9 @@ impl Terminal {
                     self.x = self.cols - 1;
                 }
                 self.fb.fill_rect(
-                    self.x * FONT_WIDTH,
+                    self.x * CELL_WIDTH,
                     self.y * FONT_HEIGHT,
-                    FONT_WIDTH,
+                    CELL_WIDTH,
                     FONT_HEIGHT,
                     BLACK,
                 );
@@ -110,26 +117,28 @@ impl Terminal {
 
     fn draw_char(&mut self, c: u8) {
         let glyph = self.font.glyph(c);
-        let bx = self.x * FONT_WIDTH;
+        let bx = self.x * CELL_WIDTH;
         let by = self.y * FONT_HEIGHT;
+        // black cell first so the squares show up on clean ground
+        self.fb.fill_rect(bx, by, CELL_WIDTH, FONT_HEIGHT, BLACK);
         for (row, bits) in glyph.iter().enumerate() {
-            self.fb.bit_row(bx, by + row as u32, *bits, WHITE, BLACK);
-            // second pass one pixel right, looks like bold
-            if super::font::BOLD {
-                self.fb.bit_row(bx + 1, by + row as u32, *bits, WHITE, BLACK);
+            for bit in 0..8 {
+                if bits & (0x80 >> bit) != 0 {
+                    self.fb.fill_rect(bx + bit as u32, by + row as u32, 2, 2, WHITE);
+                }
             }
         }
     }
 
     fn draw_cursor(&mut self) {
-        let bx = self.x * FONT_WIDTH;
+        let bx = self.x * CELL_WIDTH;
         let by = self.y * FONT_HEIGHT;
-        self.fb.fill_rect(bx, by + FONT_HEIGHT - 2, FONT_WIDTH, 2, WHITE);
+        self.fb.fill_rect(bx, by, 2, FONT_HEIGHT, WHITE);
     }
 
     fn clear_cursor(&mut self) {
-        let bx = self.x * FONT_WIDTH;
+        let bx = self.x * CELL_WIDTH;
         let by = self.y * FONT_HEIGHT;
-        self.fb.fill_rect(bx, by + FONT_HEIGHT - 2, FONT_WIDTH, 2, BLACK);
+        self.fb.fill_rect(bx, by, 2, FONT_HEIGHT, BLACK);
     }
 }

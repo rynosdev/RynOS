@@ -58,14 +58,6 @@ impl Framebuffer {
         self.fill_rect(0, 0, self.width, self.height, color);
     }
 
-    // one glyph row where a set bit means fg
-    pub fn bit_row(&mut self, x: u32, y: u32, bits: u8, fg: u32, bg: u32) {
-        for bit in 0..8 {
-            let color = if bits & (0x80 >> bit) != 0 { fg } else { bg };
-            self.set_pixel(x + bit as u32, y, color);
-        }
-    }
-
     // move everything up by n pixel rows and clear what is left below
     pub fn scroll_up(&mut self, lines: u32) {
         let shift = (lines * self.pitch) as usize;

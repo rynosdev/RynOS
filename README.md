@@ -1,2 +1,5 @@
 # RynOS
-RynOS - small operating system on Rust for old laptops.
+Small operating system for old and weak laptops. Written in Rust and NASM.
+
+
+Copyright (c) RynOS 2026

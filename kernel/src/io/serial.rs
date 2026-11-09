@@ -1,7 +1,7 @@
 /*
  * serial.rs
  * Copyright (c) RynOS 2026
- * COM1 output for boot logs and panic messages.
+ * COM1 output. Boot logs and panic text go here.
  */
 
 use crate::io::port::{inb, outb};
@@ -11,7 +11,7 @@ const COM1: u16 = 0x3f8;
 
 pub fn init() {
     unsafe {
-        // default rate 38400: divisor 3, 8N1, FIFO, RTS/DRS on
+        // 38400 baud with divisor 3, 8N1, fifo on
         outb(COM1 + 1, 0x00);
         outb(COM1 + 3, 0x80);
         outb(COM1, 0x03);

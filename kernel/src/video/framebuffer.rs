@@ -1,7 +1,7 @@
 /*
  * framebuffer.rs
  * Copyright (c) RynOS 2026
- * Linear framebuffer: pixels, rectangles, scrolling live here.
+ * Pixels on the linear framebuffer. Rectangles and scrolling.
  */
 
 pub struct Framebuffer {
@@ -17,7 +17,7 @@ pub const WHITE: u32 = 0xd8d8d8;
 
 impl Framebuffer {
     pub fn new(info: crate::boot::multiboot::FramebufferInfo) -> Option<Self> {
-        // only 32bpp rgb for now
+        // 32bpp rgb linear only for now
         if info.bpp != 32 {
             return None;
         }
@@ -58,15 +58,7 @@ impl Framebuffer {
         self.fill_rect(0, 0, self.width, self.height, color);
     }
 
-    // TEMP: draw a checker to test pixel addressing
-    pub fn fb_check(&mut self) {
-        for i in 0..64 {
-            self.set_pixel(100 + i, 100, 0x00ff00);
-            self.set_pixel(100, 100 + i, 0x0000ff);
-        }
-    }
-
-    // one glyph row, 1 set bit = fg
+    // one glyph row where a set bit means fg
     pub fn bit_row(&mut self, x: u32, y: u32, bits: u8, fg: u32, bg: u32) {
         for bit in 0..8 {
             let color = if bits & (0x80 >> bit) != 0 { fg } else { bg };
@@ -74,7 +66,7 @@ impl Framebuffer {
         }
     }
 
-    // move screen content up by n pixel rows and clear the freed strip
+    // move everything up by n pixel rows and clear what is left below
     pub fn scroll_up(&mut self, lines: u32) {
         let shift = (lines * self.pitch) as usize;
         let copy_bytes = (self.height - lines) as usize * self.pitch as usize;

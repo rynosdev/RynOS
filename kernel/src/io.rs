@@ -1,7 +1,7 @@
 /*
  * io.rs
  * Copyright (c) RynOS 2026
- * Input/output: raw ports and serial port.
+ * Talking to devices: raw ports and the serial line.
  */
 
 pub mod port;

@@ -1,7 +1,7 @@
 /*
  * multiboot.rs
  * Copyright (c) RynOS 2026
- * Reads multiboot2 boot information tags. Only what the kernel needs.
+ * Walk multiboot2 info tags. We only need the framebuffer.
  */
 
 #[repr(C)]
@@ -46,6 +46,7 @@ impl FramebufferTag {
 }
 
 pub fn find_framebuffer(start: u64) -> Option<FramebufferInfo> {
+    // the first dword pair is the total size so tags start at +8
     let mut off = 8;
     loop {
         let tag = (start + off) as *const Tag;
@@ -58,7 +59,7 @@ pub fn find_framebuffer(start: u64) -> Option<FramebufferInfo> {
             return Some(unsafe { (*fb).info() });
         }
         off += size as u64;
-        // tags are 8 byte aligned
+        // every tag starts on an 8 byte border
         if off % 8 != 0 {
             off += 8 - off % 8;
         }

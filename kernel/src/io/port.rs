@@ -1,7 +1,7 @@
 /*
  * port.rs
  * Copyright (c) RynOS 2026
- * Raw x86 I/O port access.
+ * x86 io port reads and writes.
  */
 
 use core::arch::asm;
@@ -18,7 +18,7 @@ pub unsafe fn inb(port: u16) -> u8 {
     val
 }
 
-// one write to port 0x80 works as a short delay in ISA time
+// a write to port 0x80 gives the system a short pause
 #[inline]
 pub unsafe fn io_wait() {
     outb(0x80, 0);

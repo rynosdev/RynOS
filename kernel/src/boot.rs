@@ -1,7 +1,7 @@
 /*
  * boot.rs
  * Copyright (c) RynOS 2026
- * Boot support: multiboot2 tags.
+ * What the bootloader gives us.
  */
 
 pub mod multiboot;

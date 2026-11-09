@@ -1,7 +1,7 @@
 ; entry.asm
 ; Copyright (c) RynOS 2026
-; Multiboot2 stub. GRUB enters in 32-bit protected mode, so we build page
-; tables, switch to long mode and call kmain.
+; Multiboot2 stub. GRUB enters in 32 bit. We build page tables,
+; enter long mode and call kmain.
 
 %define MB_MAGIC 0x36d76289
 
@@ -12,7 +12,7 @@ header_start:
     dd 0                                ; i386 protected mode
     dd header_end - header_start
     dd -(0xe85250d6 + (header_end - header_start))
-    ; framebuffer request: prefer linear, 1024x768x32
+    ; framebuffer request: linear, 1024x768x32
     dw 5
     dw 2
     dd 20

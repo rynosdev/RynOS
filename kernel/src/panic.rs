@@ -1,7 +1,7 @@
 /*
  * panic.rs
  * Copyright (c) RynOS 2026
- * Kernel panic handler. Prints the reason and stops the machine.
+ * Print the panic reason and stop the machine.
  */
 
 use core::fmt::Write;

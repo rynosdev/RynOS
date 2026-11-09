@@ -1,18 +1,16 @@
 /*
  * interrupts.rs
  * Copyright (c) RynOS 2026
- * Exception and hardware interrupt handlers. PIC remap, EOI.
+ * Exception handlers and the interrupt handler stubs. Remaps the PIC.
  */
 
 use crate::cpu::idt;
 use crate::io::port::{inb, io_wait, outb};
 
 const ICW1_INIT: u8 = 0x11;
-const OFFSET1: u8 = 32; // IRQ0 -> vector 32
-const OFFSET2: u8 = 40; // IRQ8 -> vector 40
 const ICW4_8086: u8 = 0x01;
 
-// iretq frame as the CPU leaves it
+// what iretq leaves on the stack
 #[repr(C)]
 pub struct StackFrame {
     rip: u64,
@@ -35,22 +33,20 @@ macro_rules! fault {
     };
 }
 
-// exceptions that can show up in practice, all just panic and stop
+// any CPU fault stops the kernel for now
 fault!(divide_fault, "divide fault");
-fault!(ud_fault, "invalid opcode");
-fault!(page_fault, "page fault", ec);
-fault!(gp_fault, "general protection fault", ec);
-fault!(stack_fault, "stack fault", ec);
-fault!(seg_fault, "segment not present", ec);
 fault!(double_fault, "double fault", ec);
+fault!(seg_fault, "segment not present", ec);
+fault!(stack_fault, "stack fault", ec);
+fault!(gp_fault, "general protection fault", ec);
+fault!(page_fault, "page fault", ec);
+fault!(ud_fault, "invalid opcode");
 fault!(bad_entry, "unexpected exception");
 
-// timer tick, nothing to do for v0.0.1
 extern "x86-interrupt" fn pit_tick(_f: &mut StackFrame) {
     send_eoi(0);
 }
 
-// key press
 extern "x86-interrupt" fn keyboard_irq(_f: &mut StackFrame) {
     crate::drivers::ps2::keyboard::irq_handler();
     send_eoi(1);
@@ -77,16 +73,16 @@ fn set_irq_mask(port: u16, irq: u8, on: bool) {
 
 pub fn init() {
     unsafe {
-        // remap PIC away from vectors 8..15
+        // move the PIC lines away from CPU exceptions (vectors 8..15)
         outb(0x20, ICW1_INIT);
         io_wait();
         outb(0xa0, ICW1_INIT);
         io_wait();
-        outb(0x21, OFFSET1);
+        outb(0x21, 32); // irq0 -> vector 32
         io_wait();
-        outb(0xa1, OFFSET2);
+        outb(0xa1, 40); // irq8 -> vector 40
         io_wait();
-        outb(0x21, 4); // slave at IRQ2
+        outb(0x21, 4); // slave sits on irq2
         io_wait();
         outb(0xa1, 2);
         io_wait();
@@ -95,7 +91,7 @@ pub fn init() {
         outb(0xa1, ICW4_8086);
         io_wait();
 
-        // mask everything, unmask the ones we use
+        // mask all lines then open the ones we use
         outb(0x21, 0xff);
         outb(0xa1, 0xff);
     }
@@ -122,11 +118,4 @@ pub fn init() {
     }
 
     idt::load();
-}
-
-#[macro_export]
-macro_rules! sti {
-    () => {
-        unsafe { core::arch::asm!("sti") }
-    };
 }

@@ -1,7 +1,7 @@
 /*
  * idt.rs
  * Copyright (c) RynOS 2026
- * Interrupt descriptor table built by hand, no crate dependence.
+ * Interrupt table built by hand, no crate help.
  */
 
 #[derive(Copy, Clone)]
@@ -39,15 +39,15 @@ impl Gate {
 
 pub static mut IDT: [Gate; 256] = [Gate::EMPTY; 256];
 
-// read through lgdt/lidt memory operands, the compiler cannot see it
 #[repr(packed)]
+// lidt also reads this memory directly
 #[allow(dead_code)]
 struct IdtPtr {
     limit: u16,
     base: u64,
 }
 
-// 0x8e = present, ring 0, 32-bit interrupt gate
+// 0x8e: present, ring 0, interrupt gate
 pub fn set_gate(v: u8, handler: usize) {
     unsafe {
         IDT[v as usize].set(handler, 0x8e);

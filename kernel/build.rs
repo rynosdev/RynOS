@@ -1,7 +1,7 @@
 /*
  * build.rs
  * Copyright (c) RynOS 2026
- * Builds the NASM boot stub and links it into the kernel.
+ * Runs nasm on the boot stub and links the object in.
  */
 
 use std::env;

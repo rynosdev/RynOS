@@ -1,7 +1,7 @@
 /*
  * video.rs
  * Copyright (c) RynOS 2026
- * Video output: framebuffer, font and text terminal.
+ * Screen. Pixel layer, font and text.
  */
 
 pub mod font;

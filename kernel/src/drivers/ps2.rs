@@ -1,7 +1,7 @@
 /*
  * ps2.rs
  * Copyright (c) RynOS 2026
- * PS/2 hardware layer. Keyboard lives here.
+ * The ps2 controller and its devices.
  */
 
 pub mod keyboard;

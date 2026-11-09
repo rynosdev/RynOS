@@ -1,7 +1,7 @@
 /*
  * terminal.rs
  * Copyright (c) RynOS 2026
- * Text terminal on the framebuffer. Char grid, cursor, scrolling.
+ * Text screen on the framebuffer. Grid, cursor and scrolling.
  */
 
 use super::font::{Font, FONT_HEIGHT, FONT_WIDTH};
@@ -17,10 +17,9 @@ pub struct Terminal {
     font: Font,
 }
 
-// single instance of the screen, used by main loop and panic
+// the one screen, used by the main loop and by panic
 pub static mut TERMINAL: Option<Terminal> = None;
 
-// init screen. returns false if no usable framebuffer.
 pub fn init(fb: Framebuffer) -> bool {
     unsafe {
         TERMINAL = Some(Terminal::new(fb));
@@ -52,14 +51,8 @@ impl Terminal {
         }
     }
 
-    pub fn write_str(&mut self, s: &str) {
-        for c in s.chars() {
-            self.write_char(c);
-        }
-    }
-
     pub fn write_char(&mut self, c: char) {
-        // hide old cursor line while printing
+        // clear the old cursor before anything else moves
         self.clear_cursor();
         match c {
             '\n' => {
@@ -68,7 +61,7 @@ impl Terminal {
             }
             '\r' => self.x = 0,
             '\x08' => {
-                // backspace: step back one cell
+                // backspace walks back one grid cell
                 if self.x > 0 {
                     self.x -= 1;
                 } else if self.y > 0 {
@@ -84,7 +77,7 @@ impl Terminal {
                 );
             }
             '\t' => {
-                // next tab stop of 8 chars
+                // next tab stop, grid of 8
                 self.x = (self.x + 8) & !(8 - 1);
                 if self.x >= self.cols {
                     self.x = 0;
@@ -121,6 +114,10 @@ impl Terminal {
         let by = self.y * FONT_HEIGHT;
         for (row, bits) in glyph.iter().enumerate() {
             self.fb.bit_row(bx, by + row as u32, *bits, WHITE, BLACK);
+            // second pass one pixel right, looks like bold
+            if super::font::BOLD {
+                self.fb.bit_row(bx + 1, by + row as u32, *bits, WHITE, BLACK);
+            }
         }
     }
 

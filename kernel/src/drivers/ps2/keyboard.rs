@@ -1,7 +1,7 @@
 /*
  * keyboard.rs
  * Copyright (c) RynOS 2026
- * PS/2 keyboard on port 0x60. Scancodes set 1, ring buffer for keys.
+ * PS/2 keyboard on port 0x60. Scancode set 1, keys go in a ring buffer.
  */
 
 use crate::io::port::inb;
@@ -15,8 +15,9 @@ static mut WRITE: usize = 0;
 
 static mut SHIFT: bool = false;
 
-// scancode set 1 make codes, 0 = no key
+// make codes to ascii, 0 = no key
 const MAP: [u8; 128] = build_map();
+// same keys with shift held
 const MAP_SHIFT: [u8; 128] = build_map_shift();
 
 const fn build_map() -> [u8; 128] {
@@ -129,7 +130,7 @@ const fn build_map_shift() -> [u8; 128] {
 
 pub fn init() {
     unsafe {
-        // flush pending bytes, just in case
+        // drop keys pressed before we booted
         loop {
             if inb(STATUS_PORT) & 1 == 0 {
                 break;
@@ -139,7 +140,7 @@ pub fn init() {
     }
 }
 
-// called from the IRQ1 handler
+// called from the irq handler
 pub fn irq_handler() {
     unsafe {
         let sc = inb(DATA_PORT);
@@ -167,7 +168,7 @@ fn push(c: u8) {
             BUFFER[WRITE] = c;
             WRITE = next;
         }
-        // if full, drop the key
+        // a full buffer drops new keys
     }
 }
 

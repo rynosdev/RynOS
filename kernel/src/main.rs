@@ -1,7 +1,7 @@
 /*
  * main.rs
  * Copyright (c) RynOS 2026
- * Kernel entry point. Inits subsystems in order and runs the main loop.
+ * Boot the kernel. Init order is bottom up then the main loop.
  */
 
 #![no_std]
@@ -23,6 +23,7 @@ pub extern "C" fn kmain(mbi: u64) -> ! {
     io::serial::init();
     serial_println!("RynOS v0.0.1");
 
+    // video first so panics show up on screen
     let fb_info = match multiboot::find_framebuffer(mbi) {
         Some(info) => info,
         None => panic!("no framebuffer from bootloader"),
@@ -36,11 +37,11 @@ pub extern "C" fn kmain(mbi: u64) -> ! {
         .unwrap_or_else(|| panic!("unsupported framebuffer mode"));
     terminal::init(fb);
 
-    // interrupts: gdt, idt, pic remap, keyboard
+    // tables and hardware
     cpu::gdt::load();
     cpu::interrupts::init();
     drivers::ps2::keyboard::init();
-    sti!();
+    unsafe { core::arch::asm!("sti") };
 
     serial_println!("booted");
 
@@ -56,7 +57,7 @@ pub extern "C" fn kmain(mbi: u64) -> ! {
         if let Some(c) = drivers::ps2::keyboard::next_key() {
             t.write_char(c as char);
         } else {
-            // wait for next interrupt
+            // sleep until the next interrupt
             unsafe { core::arch::asm!("hlt") }
         }
     }

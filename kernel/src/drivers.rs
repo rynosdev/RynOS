@@ -1,7 +1,7 @@
 /*
  * drivers.rs
  * Copyright (c) RynOS 2026
- * Device drivers. For now just the PS/2 keyboard.
+ * Device drivers.
  */
 
 pub mod ps2;

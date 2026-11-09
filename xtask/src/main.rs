@@ -1,7 +1,7 @@
 /*
  * main.rs
  * Copyright (c) RynOS 2026
- * Build/run/test/image commands. Entry: cargo xtask <command>.
+ * build image run test commands. Run as cargo xtask <cmd>.
  */
 
 use std::path::{Path, PathBuf};

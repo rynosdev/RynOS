@@ -1,16 +1,18 @@
 /*
  * font.rs
  * Copyright (c) RynOS 2026
- * 8x16 PSF2 console font, glyphs for ASCII are used.
+ * 8x16 PSF2 console font. Only ascii glyphs get drawn.
  */
 
 const FONT: &[u8] = include_bytes!("font.psf");
 
-// psf2 header fields
 const WIDTH: u32 = 8;
 const HEIGHT: u32 = 16;
 const CHARSIZE: u32 = 16;
 const HEADER_SIZE: u32 = 32;
+
+// draw every glyph once more with a one pixel shift, reads like bold
+pub const BOLD: bool = true;
 
 pub struct Font;
 

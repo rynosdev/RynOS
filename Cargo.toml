@@ -1,6 +1,14 @@
 # Cargo.toml
-# RynOS workspace. kernel is the OS, xtask does build/run/test/image.
+# RynOS kernel.
 
-[workspace]
-members = ["kernel", "xtask"]
-resolver = "2"
+[package]
+name = "rynos"
+version = "0.0.1"
+edition = "2024"
+license = "GPL-2.0-only"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

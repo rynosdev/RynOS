@@ -3,3 +3,16 @@
 
 [alias]
 xtask = ["run", "-p", "xtask", "--"]
+
+[build]
+target = "x86_64-unknown-none"
+
+[target.x86_64-unknown-none]
+linker = "ld"
+rustflags = [
+    "-C", "relocation-model=static",
+    "-C", "link-arg=-Tlinker.ld",
+    "-C", "link-arg=-no-pie",
+    "-C", "link-arg=-z",
+    "-C", "link-arg=max-page-size=0x1000",
+]

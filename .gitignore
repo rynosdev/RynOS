@@ -1,3 +1,4 @@
-target/
-rynos.iso
-iso/boot/kernel.bin
+/target
+*.iso
+*.o
+/iso

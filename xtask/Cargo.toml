@@ -1,8 +1,0 @@
-# xtask/Cargo.toml
-# Copyright (c) RynOS 2026
-# Blend of build/run/test commands for the OS. Run with: cargo xtask <cmd>
-
-[package]
-name = "xtask"
-version = "0.0.1"
-edition = "2021"

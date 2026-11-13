@@ -3,9 +3,5 @@
 version = 4
 
 [[package]]
-name = "rynkernel"
-version = "0.0.1"
-
-[[package]]
-name = "xtask"
+name = "rynos"
 version = "0.0.1"

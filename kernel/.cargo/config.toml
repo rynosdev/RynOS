@@ -1,5 +1,0 @@
-# config.toml
-# Target for the kernel crate.
-
-[build]
-target = "x86_64-unknown-none"

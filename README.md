@@ -4,6 +4,8 @@ RynOS
 Small x86_64 OS for old and weak laptops.
 Written in Rust and NASM.
 
+![RynOS](docs/test001.png)
+
 Build & Run
 -----------
 

@@ -1,4 +1,10 @@
+# License: GPL-2.0-only
+# Copyright (C) 2026, rynosdev
+# .gitignore
+# Git ignore
+
 /target
 *.iso
 *.o
 /iso
+/disk.img

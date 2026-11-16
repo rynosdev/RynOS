@@ -1,0 +1,19 @@
+# License: GPL-2.0-only
+# Copyright (C) 2026, rynosdev
+# Cargo.toml
+# Cargo config
+
+# package info
+[package]
+name = "rynos"
+version = "0.0.1"
+edition = "2024"
+license = "GPL-2.0-only"
+
+# dev profile
+[profile.dev]
+panic = "abort"
+
+# release profile
+[profile.release]
+panic = "abort"

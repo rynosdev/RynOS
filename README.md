@@ -12,7 +12,6 @@ Requirements: rustup (nightly), nasm, qemu, grub-mkrescue, xorriso.
     ./build.sh
     ./run.sh
 
-    
 License
 -------
 

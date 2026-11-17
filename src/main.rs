@@ -21,11 +21,11 @@ mod video;
 use core::arch::asm;
 use core::ptr::read_unaligned;
 
-use cpu::{gdt, idt, interrupts, pit, rtc};
+use cpu::{gdt, idt, interrupts, pit, power, rtc};
 use drivers::ata::ata;
 use drivers::ps2::mouse;
 use fs::rfs::Rfs;
-use video::{font, framebuffer};
+use video::{font, framebuffer, menu};
 
 const BOOT: u32 = 0x36D7_6289;
 const FB: u32 = 8;
@@ -104,29 +104,26 @@ fn desk() {
         let b = 0xC2 - (0xC2 - 0x3A) * y / n;
         framebuffer::rect(0, y, w, 1, (r << 16) | (g << 8) | b);
     }
-
-    let text = "RynOS";
-    let x = (w - font::textw(text)) / 2;
-    let y = (h - font::height()) / 2;
-
-    font::text(x + 1, y + 1, text, 0x001020);
-    font::text(x, y, text, 0xF2F2F2);
 }
 
 // draw a part of the top bar
 fn barpart(x: u32, w: u32) {
     for y in 0..24 {
-        let v = 0xF7 - (0xF7 - 0xC9) * y / 23;
-        framebuffer::rect(x, y, w, 1, (v << 16) | (v << 8) | v);
+        let r = 0xF9 - (0xF9 - 0xD3) * y / 23;
+        let g = 0xFA - (0xFA - 0xD8) * y / 23;
+        let b = 0xFC - (0xFC - 0xE0) * y / 23;
+        framebuffer::rect(x, y, w, 1, (r << 16) | (g << 8) | b);
     }
 
-    framebuffer::rect(x, 23, w, 1, 0x8E8E8E);
+    framebuffer::rect(x, 0, w, 1, 0xFFFFFF);
+    framebuffer::rect(x, 22, w, 1, 0xF2F2F2);
+    framebuffer::rect(x, 23, w, 1, 0x8A8A8A);
 }
 
 // draw the top bar
 fn panel() {
     barpart(0, framebuffer::width());
-    font::text(10, 4, "RynOS", 0x161616);
+    menu::titles();
 }
 
 // draw the clock text
@@ -202,7 +199,25 @@ pub extern "C" fn kmain(magic: u32, info: u64) -> ! {
             asm!("hlt");
         }
 
-        mouse::update();
+        let moved = mouse::update();
+
+        if moved && menu::isopen() {
+            mouse::hide();
+            let (x, y) = mouse::pos();
+            menu::hover(x, y);
+            mouse::show();
+        }
+
+        if let Some((x, y)) = mouse::click() {
+            mouse::hide();
+            let act = menu::click(x, y);
+
+            match act {
+                menu::Act::Shutdown => power::shutdown(),
+                menu::Act::Reboot => power::reboot(),
+                menu::Act::None => mouse::show(),
+            }
+        }
 
         let tick = pit::ticks() / 100;
 

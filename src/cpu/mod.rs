@@ -9,4 +9,5 @@ pub mod gdt;
 pub mod idt;
 pub mod interrupts;
 pub mod pit;
+pub mod power;
 pub mod rtc;

@@ -46,6 +46,8 @@ static Y: AtomicI32 = AtomicI32::new(0);
 static OX: AtomicI32 = AtomicI32::new(-1);
 static OY: AtomicI32 = AtomicI32::new(-1);
 static MOVED: AtomicBool = AtomicBool::new(false);
+static BUTTONS: AtomicU8 = AtomicU8::new(0);
+static CLICK: AtomicBool = AtomicBool::new(false);
 
 // pixels under the cursor
 static SAVED: [[AtomicU32; CW as usize]; CH as usize] =
@@ -105,7 +107,6 @@ fn flush() {
     }
 }
 
-// turn on the mouse
 pub fn init() {
     flush();
     command(0xA8);
@@ -167,12 +168,18 @@ pub fn onirq() {
     let x = (X.load(Ordering::Acquire) + dx).clamp(0, maxx);
     let y = (Y.load(Ordering::Acquire) - dy).clamp(0, maxy);
 
+    let bits = flags & 0x07;
+    let old = BUTTONS.swap(bits, Ordering::AcqRel);
+
+    if old & 1 == 0 && bits & 1 != 0 {
+        CLICK.store(true, Ordering::Release);
+    }
+
     X.store(x, Ordering::Release);
     Y.store(y, Ordering::Release);
     MOVED.store(true, Ordering::Release);
 }
 
-// put the old pixels back
 fn restore(x: i32, y: i32) {
     for row in 0..CH {
         for col in 0..CW {
@@ -200,7 +207,6 @@ fn draw(x: i32, y: i32) {
     }
 }
 
-// draw the cursor
 pub fn show() {
     let x = X.load(Ordering::Acquire);
     let y = Y.load(Ordering::Acquire);
@@ -210,7 +216,6 @@ pub fn show() {
     OY.store(y, Ordering::Release);
 }
 
-// remove the cursor before a redraw
 pub fn hide() {
     let x = OX.load(Ordering::Acquire);
     let y = OY.load(Ordering::Acquire);
@@ -223,10 +228,24 @@ pub fn hide() {
     OY.store(-1, Ordering::Release);
 }
 
-// move the cursor
-pub fn update() {
+pub fn pos() -> (i32, i32) {
+    (
+        X.load(Ordering::Acquire),
+        Y.load(Ordering::Acquire),
+    )
+}
+
+pub fn click() -> Option<(i32, i32)> {
+    if CLICK.swap(false, Ordering::AcqRel) {
+        Some(pos())
+    } else {
+        None
+    }
+}
+
+pub fn update() -> bool {
     if !MOVED.swap(false, Ordering::AcqRel) {
-        return;
+        return false;
     }
 
     let x = X.load(Ordering::Acquire);
@@ -241,4 +260,5 @@ pub fn update() {
     draw(x, y);
     OX.store(x, Ordering::Release);
     OY.store(y, Ordering::Release);
+    true
 }

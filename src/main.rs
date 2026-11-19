@@ -168,6 +168,7 @@ pub extern "C" fn kmain(magic: u32, info: u64) -> ! {
     idt::init();
     interrupts::init();
     pit::init();
+    power::init();
 
     if magic != BOOT || !video(info) {
         loop {
@@ -197,6 +198,10 @@ pub extern "C" fn kmain(magic: u32, info: u64) -> ! {
         unsafe {
             // wait for an interrupt
             asm!("hlt");
+        }
+
+        if power::poll() {
+            power::shutdown();
         }
 
         let moved = mouse::update();

@@ -7,9 +7,17 @@
 
 use core::arch::asm;
 use core::ptr::read_unaligned;
+use core::sync::atomic::{AtomicU16, Ordering};
 
 use crate::cpu::interrupts;
-use crate::io::port::{write16, writeport};
+use crate::io::port::{read16, readport, write16, writeport};
+
+// event blocks of the two pm1 chips
+static PM1A: AtomicU16 = AtomicU16::new(0);
+static PM1B: AtomicU16 = AtomicU16::new(0);
+
+// empty idt for the last reset
+static ZERO: [u8; 10] = [0; 10];
 
 fn u16at(ptr: *const u8, off: usize) -> u16 {
     unsafe { read_unaligned(ptr.add(off) as *const u16) }
@@ -130,14 +138,62 @@ fn fadt() -> *const u8 {
     core::ptr::null()
 }
 
+// enable acpi mode and the power button event
+pub fn init() {
+    let f = fadt();
+
+    if f.is_null() || u32at(f, 4) < 70 {
+        return;
+    }
+
+    let evta = u16at(f, 56);
+    let evtb = u16at(f, 60);
+    let cnta = u16at(f, 64);
+    let cntb = u16at(f, 68);
+
+    // switch the chipset to acpi mode
+    if cnta != 0 {
+        write16(cnta, read16(cnta) | 1);
+    }
+
+    if cntb != 0 {
+        write16(cntb, read16(cntb) | 1);
+    }
+
+    // let the power button raise an event
+    if evta != 0 {
+        write16(evta + 2, read16(evta + 2) | (1 << 8));
+        PM1A.store(evta, Ordering::Release);
+    }
+
+    if evtb != 0 {
+        write16(evtb + 2, read16(evtb + 2) | (1 << 8));
+        PM1B.store(evtb, Ordering::Release);
+    }
+}
+
+// true if the power button was pressed
+pub fn poll() -> bool {
+    let a = PM1A.load(Ordering::Acquire);
+    let b = PM1B.load(Ordering::Acquire);
+
+    if a != 0 && read16(a) & (1 << 8) != 0 {
+        write16(a, 1 << 8);
+        return true;
+    }
+
+    if b != 0 && read16(b) & (1 << 8) != 0 {
+        write16(b, 1 << 8);
+        return true;
+    }
+
+    false
+}
+
 fn acpi() -> bool {
     let f = fadt();
 
-    if f.is_null() {
-        return false;
-    }
-
-    if u32at(f, 4) < 70 {
+    if f.is_null() || u32at(f, 4) < 70 {
         return false;
     }
 
@@ -160,13 +216,64 @@ fn acpi() -> bool {
     true
 }
 
+// try the reset register from the acpi table
+fn acpireset() -> bool {
+    let f = fadt();
+
+    if f.is_null() || u32at(f, 4) < 129 {
+        return false;
+    }
+
+    // the flag says the reset register is valid
+    if u32at(f, 112) & (1 << 10) == 0 {
+        return false;
+    }
+
+    let space = unsafe { *f.add(116) };
+    let addr = u64at(f, 120);
+    let value = unsafe { *f.add(128) };
+
+    if addr == 0 {
+        return false;
+    }
+
+    match space {
+        0 => unsafe {
+            (addr as *mut u8).write_volatile(value);
+        },
+        1 => writeport(addr as u16, value),
+        _ => return false,
+    }
+
+    true
+}
+
+// give the reset time to fire
+fn delay() {
+    for _ in 0..1000 {
+        readport(0x80);
+    }
+}
+
 pub fn reboot() -> ! {
     interrupts::disable();
 
+    if acpireset() {
+        delay();
+    }
+
+    // chipset reset
+    writeport(0xCF9, 0x06);
+    delay();
+
     // pulse the reset line of the keyboard controller
     writeport(0x64, 0xFE);
+    delay();
 
-    writeport(0xCF9, 0x06);
+    // an empty idt faults the cpu and resets it
+    unsafe {
+        asm!("lidt [{}]", "int3", in(reg) &ZERO);
+    }
 
     loop {
         unsafe {

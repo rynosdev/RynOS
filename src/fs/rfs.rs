@@ -983,7 +983,6 @@ impl Rfs {
         Ok(())
     }
 
-    #[allow(dead_code)]
     // remove a dir
     pub fn rmdir(&self, path: &str) -> Result<(), ()> {
         let (dir, name) = self.parent(path)?;
@@ -1006,7 +1005,6 @@ impl Rfs {
         Ok(())
     }
 
-    #[allow(dead_code)]
     // rename a file
     pub fn rename(&self, from: &str, to: &str) -> Result<(), ()> {
         if from == to {

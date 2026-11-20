@@ -120,9 +120,3 @@ pub fn rect(x: u32, y: u32, w: u32, h: u32, color: u32) {
         row += 1;
     }
 }
-
-#[allow(dead_code)]
-// fill the screen
-pub fn clear(color: u32) {
-    rect(0, 0, width(), height(), color);
-}
